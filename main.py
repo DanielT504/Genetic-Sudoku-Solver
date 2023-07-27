@@ -104,7 +104,7 @@ class SudokuUI:
         for generation in range(genetic_solver.max_generations):
             best_solution = genetic_solver.get_best_solution(population)
             best_fitness = genetic_solver.evaluate_fitness(best_solution)
-            print(f"Generation {generation+1}: Best Fitness: {best_fitness}")
+            print(f"Generation {generation+1}: Best Fitness: {best_fitness}/243")
             self.display_solution(best_solution)
             population = genetic_solver.evolve_population(population)
             self.root.update_idletasks() # Update the UI to show the current solution

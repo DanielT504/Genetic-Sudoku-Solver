@@ -1,12 +1,20 @@
 import random
+import heapq
 
 class GeneticAlgorithm:
-    def __init__(self, population_size=100, max_generations=1000, mutation_rate=0.05, tournament_size=10, random_selection_portion=0.1):
+    def __init__(self, population_size=200, max_generations=100000, mutation_rate=0.04, mutation_rate_factor=1.5, stagnation_threshold=50, tournament_size=10, random_selection_portion=0.1, elitism_portion=0.1):
         self.population_size = population_size
         self.max_generations = max_generations
         self.mutation_rate = mutation_rate
+        self.mutation_rate_factor = mutation_rate_factor  # New variable to increase mutation rate
+        self.stagnation_threshold = stagnation_threshold  # New variable to track stagnant generations
         self.tournament_size = tournament_size
         self.random_selection_portion = random_selection_portion
+        self.elitism_portion = elitism_portion
+        self.best_fitness = None  # Track best fitness over generations
+        self.stagnant_generations = 0  # Track number of generations without improvement
+        self.max_mutation_rate = 0.05
+        self.min_mutation_rate = 0.01
 
     def initialize_population(self, grid):
         population = []
@@ -26,9 +34,8 @@ class GeneticAlgorithm:
                     if valid_numbers:
                         solution[i][j] = random.choice(valid_numbers)
                     else:
-                        # if no valid numbers, leave it as 0, 
-                        # the mutation function in the next generation might find a valid number
-                        solution[i][j] = 0
+                        
+                        solution[i][j] = random.randint(1, 9)
         return solution
 
     def mutate(self, solution):
@@ -41,8 +48,14 @@ class GeneticAlgorithm:
 
     def evolve_population(self, population):
         new_population = []
-        num_random_selection = int(len(population) * self.random_selection_portion)
-        num_tournament_selection = len(population) - num_random_selection
+
+        # Select the fittest individuals to be passed onto the new population
+        num_elitism = int(len(population) * self.elitism_portion)
+        population_sorted_by_fitness = heapq.nlargest(num_elitism, population, key=self.evaluate_fitness)
+        new_population.extend(population_sorted_by_fitness)
+
+        num_random_selection = int((len(population) - num_elitism) * self.random_selection_portion)
+        num_tournament_selection = len(population) - num_elitism - num_random_selection
 
         for _ in range(num_random_selection):
             new_population.append(random.choice(population))
@@ -57,6 +70,21 @@ class GeneticAlgorithm:
             new_population[i] = self.mutate(new_population[i])
 
         best_solution = self.get_best_solution(new_population)
+        best_fitness = self.evaluate_fitness(best_solution)
+        if self.best_fitness is None or best_fitness > self.best_fitness:
+            self.best_fitness = best_fitness
+            self.stagnant_generations = 0  # Reset stagnant generations count when a new best solution is found
+            self.mutation_rate *= (1/self.mutation_rate_factor)  # Decrease mutation rate when a new best solution is found
+            self.mutation_rate = max(self.mutation_rate, self.min_mutation_rate)  # Don't allow mutation rate to fall below the minimum
+        else:
+            self.stagnant_generations += 1  # Increment stagnant generations count when no new best solution is found
+
+        # Check if the number of stagnant generations is greater than the stagnation threshold
+        if self.stagnant_generations > self.stagnation_threshold:
+            self.mutation_rate *= self.mutation_rate_factor  # Increase mutation rate
+            self.mutation_rate = min(self.mutation_rate, self.max_mutation_rate)  # Don't allow mutation rate to exceed the maximum
+            self.stagnant_generations = 0  # Reset stagnant generations count
+
         if self.is_solved(best_solution):  # Check if the Sudoku is solved
             return best_solution
         
