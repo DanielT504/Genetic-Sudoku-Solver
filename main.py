@@ -1,3 +1,4 @@
+import time
 import tkinter as tk
 
 from genetic_algorithm import GeneticAlgorithm
@@ -56,15 +57,13 @@ class SudokuUI:
 
     def fill_obvious_squares_button_clicked(self):
         print("Filling in")
-        if not self.button_clicked:
-            self.fill_obvious_squares()
-            self.button_clicked = True
-            solve_button = self.root.grid_slaves(row=9)[0]
-            solve_button.grid_forget()
+        # Retrieve and forget the solve button right away.
+        solve_button = self.root.grid_slaves(row=9)[0]
+        solve_button.grid_forget()
+        self.fill_obvious_squares()
             
     def fill_obvious_squares(self):
-        squares_filled = True
-        while squares_filled:
+        while True:
             squares_filled = False
             for i in range(9):
                 for j in range(9):
@@ -75,13 +74,12 @@ class SudokuUI:
                             self.grid[i][j] = value
                             self.entries[i][j].delete(0, tk.END)
                             self.entries[i][j].insert(0, str(value))
+                            self.root.update()
                             squares_filled = True
-                            self.root.after(100, self.fill_obvious_squares)  # Schedule the next iteration after a delay
-                            return
-
+                            time.sleep(0.01)  # delay of 10ms
             if not squares_filled:
-                self.root.after(0, self.run_after_no_changes)  # Schedule the code block after a delay
-                return
+                self.run_after_no_changes()
+                break
             
     def run_after_no_changes(self):
         print("No more obvious squares")
@@ -93,21 +91,21 @@ class SudokuUI:
         
         solve_genetic_button = tk.Button(self.root, text="Solve with genetic algorithm", command=self.solve_with_genetic_algorithm)
         solve_genetic_button.grid(row=9, columnspan=9)
-
+        
     def solve_with_genetic_algorithm(self):
         print("Solving")
-
+        
+        # Retrieve and forget the solve button right away.
+        solve_genetic_button = self.root.grid_slaves(row=9)[0]
+        solve_genetic_button.grid_forget()
+        
         genetic_solver = GeneticAlgorithm()
         population = genetic_solver.initialize_population(self.grid)
         for generation in range(genetic_solver.max_generations):
             best_solution = genetic_solver.get_best_solution(population)
             best_fitness = genetic_solver.evaluate_fitness(best_solution)
             print(f"Generation {generation+1}: Best Fitness: {best_fitness}")
-
-            # Display solution and then pause for 0.5 seconds
             self.display_solution(best_solution)
-            #self.root.after(500) # Wait for 500 ms (0.5 seconds)
-
             population = genetic_solver.evolve_population(population)
             self.root.update_idletasks() # Update the UI to show the current solution
             
