@@ -96,20 +96,20 @@ class SudokuUI:
 
     def solve_with_genetic_algorithm(self):
         print("Solving")
-                    
-        #solve_button = self.root.grid_slaves(row=9)[0]
-        #solve_button.grid_forget()
-        
-        #not working
+
         genetic_solver = GeneticAlgorithm()
         population = genetic_solver.initialize_population(self.grid)
         for generation in range(genetic_solver.max_generations):
             best_solution = genetic_solver.get_best_solution(population)
             best_fitness = genetic_solver.evaluate_fitness(best_solution)
             print(f"Generation {generation+1}: Best Fitness: {best_fitness}")
+
+            # Display solution and then pause for 0.5 seconds
             self.display_solution(best_solution)
-            self.root.update()  # Update the UI to show the current solution
+            #self.root.after(500) # Wait for 500 ms (0.5 seconds)
+
             population = genetic_solver.evolve_population(population)
+            self.root.update_idletasks() # Update the UI to show the current solution
             
     def display_solution(self, solution):
         for i in range(9):
