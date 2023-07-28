@@ -1,11 +1,13 @@
 # Genetic-Sudoku-Solver
 
-The application starts by initializing a population of Sudoku grids with random numbers in the unsolved spaces, while keeping the pre-filled cells constant as per the input puzzle. Fitness of each solution in the population is evaluated based on the number of unique numbers in each row, column and block. The higher the fitness value, the closer the solution is to a valid Sudoku grid.
+This is a genetic algorithm that solves 9x9 sudoku grids using single-point crossover, adaptive mutation, elitism, and tournament selection. The fitness of each solution in the population is evaluated based on the number of unique numbers in each row, column, and 3x3 box. The higher the fitness value, the closer the solution is to a valid Sudoku grid, with a perfect grid at 9*27=243.
 
-Three main genetic operations are performed on the population:
+![sudoku](https://github.com/DanielT504/Genetic-Sudoku-Solver/assets/62156098/469fecd5-20bc-44e0-86a8-21d9810067fc)
 
-1. **Selection** : A combination of elitism, tournament and random selection are used to choose individuals for creating the next generation. Elitism ensures the best solutions are carried over to the next generation. Tournament selection introduces competition amongst a randomly selected subset of individuals, and the best amongst this subset is chosen. Random selection introduces diversity in the population.
-2. **Crossover** : For every pair of parents selected, a new child solution is created by mixing the genes of the parents. This is done by randomly splitting the parent grids at certain points and combining the parts to form the child grid.
-3. **Mutation** : Each child solution is subjected to mutation, where a certain number of cells are randomly selected and their values are changed. This introduces randomness and helps the algorithm explore the solution space more widely.
+Before starting the genetic algorithm, the "obvious" squares are filled out to lower the search space, which entails filling out any squares that only have one possible value, and any values that only have one possible square in a box.
 
-The process of selection, crossover, and mutation is repeated over a specified number of generations. The best solution from the final generation is returned as the solved Sudoku grid. The algorithm can solve most easy to medium difficulty puzzles within a reasonable time frame. However, the performance on hard puzzles with fewer clues may vary.
+The tournament child selection is done by randomly selecting a subset of individual candidates and picking the best, with elitism ensuring that the globally best solutions will survive whether picked for the tournament or not.
+The single point crossover randomly selects a point in the array of unknown square values and trades the rightmost segment of that parent with an identically selection segment of another parent to form two children. 
+I also used adaptive mutation, which starts out constant and increases up to a threshold after a certain number of generations without an improved best fitness.
+
+These three processes are repeated over each generation, until the puzzle is solved, or gets stuck in a local optimum. The algorithm can solve most easy or medium puzzles within a reasonable time frame. However, the performance on hard puzzles with fewer clues may vary.
