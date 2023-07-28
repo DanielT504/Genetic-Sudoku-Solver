@@ -11,3 +11,8 @@ The single point crossover randomly selects a point in the array of unknown squa
 There is also adaptive mutation, which starts out at a constant rate and increases up to a threshold after a certain number of generations without an improved best fitness.
 
 These three processes are repeated over each generation, until the puzzle is solved, or gets stuck in a local optimum. The algorithm can solve most easy or medium puzzles within a reasonable time frame. However, the performance on hard puzzles with fewer clues may vary.
+
+population size: 1000
+initial mutation rate: 4%
+elitism portion: 10%
+tournament size: 10
