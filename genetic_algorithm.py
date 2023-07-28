@@ -2,19 +2,15 @@ import random
 import heapq
 
 class GeneticAlgorithm:
-    def __init__(self, population_size=200, max_generations=100000, mutation_rate=0.04, mutation_rate_factor=1.5, stagnation_threshold=50, tournament_size=10, random_selection_portion=0.1, elitism_portion=0.1):
+    def __init__(self, population_size=1000, max_generations=100000, mutation_rate=0.04, tournament_size=10, random_selection_portion=0.1, elitism_portion=0.1):
         self.population_size = population_size
         self.max_generations = max_generations
         self.mutation_rate = mutation_rate
-        self.mutation_rate_factor = mutation_rate_factor  # New variable to increase mutation rate
-        self.stagnation_threshold = stagnation_threshold  # New variable to track stagnant generations
         self.tournament_size = tournament_size
         self.random_selection_portion = random_selection_portion
         self.elitism_portion = elitism_portion
-        self.best_fitness = None  # Track best fitness over generations
-        self.stagnant_generations = 0  # Track number of generations without improvement
-        self.max_mutation_rate = 0.05
-        self.min_mutation_rate = 0.01
+        self.generations_without_improvement = 0
+        self.best_fitness_so_far = float('-inf')
 
     def initialize_population(self, grid):
         population = []
@@ -40,10 +36,29 @@ class GeneticAlgorithm:
 
     def mutate(self, solution):
         mutated_solution = [row.copy() for row in solution]
+        
         for i in range(9):
-            for j in range(9):
-                if random.random() < self.mutation_rate:
-                    mutated_solution[i][j] = random.randint(1, 9)
+            if random.random() < self.mutation_rate:
+                # Determine if we're swapping in a row, column, or box
+                mutation_type = random.choice(['row', 'column', 'box'])
+                
+                if mutation_type == 'row':
+                    # Swap two cells in this row
+                    j1, j2 = random.sample(range(9), 2)
+                    mutated_solution[i][j1], mutated_solution[i][j2] = mutated_solution[i][j2], mutated_solution[i][j1]
+                    
+                elif mutation_type == 'column':
+                    # Swap two cells in this column
+                    i1, i2 = random.sample(range(9), 2)
+                    mutated_solution[i1][i], mutated_solution[i2][i] = mutated_solution[i2][i], mutated_solution[i1][i]
+                    
+                else:  # mutation_type == 'box'
+                    # Swap two cells in this box
+                    start_row, start_col = (i // 3) * 3, (i % 3) * 3
+                    box_cells = [(start_row + r, start_col + c) for r in range(3) for c in range(3)]
+                    (i1, j1), (i2, j2) = random.sample(box_cells, 2)
+                    mutated_solution[i1][j1], mutated_solution[i2][j2] = mutated_solution[i2][j2], mutated_solution[i1][j1]
+                    
         return mutated_solution
 
     def evolve_population(self, population):
@@ -68,31 +83,43 @@ class GeneticAlgorithm:
 
         for i in range(len(new_population)):
             new_population[i] = self.mutate(new_population[i])
-
+            
         best_solution = self.get_best_solution(new_population)
         best_fitness = self.evaluate_fitness(best_solution)
-        if self.best_fitness is None or best_fitness > self.best_fitness:
-            self.best_fitness = best_fitness
-            self.stagnant_generations = 0  # Reset stagnant generations count when a new best solution is found
-            self.mutation_rate *= (1/self.mutation_rate_factor)  # Decrease mutation rate when a new best solution is found
-            self.mutation_rate = max(self.mutation_rate, self.min_mutation_rate)  # Don't allow mutation rate to fall below the minimum
+        if best_fitness > self.best_fitness_so_far:
+            self.best_fitness_so_far = best_fitness
+            self.generations_without_improvement = 0
         else:
-            self.stagnant_generations += 1  # Increment stagnant generations count when no new best solution is found
+            self.generations_without_improvement += 1
 
-        # Check if the number of stagnant generations is greater than the stagnation threshold
-        if self.stagnant_generations > self.stagnation_threshold:
-            self.mutation_rate *= self.mutation_rate_factor  # Increase mutation rate
-            self.mutation_rate = min(self.mutation_rate, self.max_mutation_rate)  # Don't allow mutation rate to exceed the maximum
-            self.stagnant_generations = 0  # Reset stagnant generations count
+        if self.generations_without_improvement >= 50:  # 50 generations without improvement
+            print("Starting local search...")  # Debugging line
+            for i in range(9):
+                for j in range(9):
+                    current_fitness = self.evaluate_fitness(best_solution)
+                    original_value = best_solution[i][j]
+                    for num in range(1, 10):  # Try each possible value
+                        best_solution[i][j] = num
+                        if self.evaluate_fitness(best_solution) > current_fitness:  # If the fitness improved, keep the new value
+                            print(f"Improved solution: {self.evaluate_fitness(best_solution)}")  # Debugging line
+                            break  # Go to next cell
+                        else:  # If the fitness didn't improve, revert the value
+                            best_solution[i][j] = original_value
 
         if self.is_solved(best_solution):  # Check if the Sudoku is solved
-            return best_solution
-        
-        return new_population
+            return [best_solution]  # return a population containing the single best solution
+
+        return new_population  # return the population as is
 
     def is_solved(self, grid):
         # A solved Sudoku grid is a grid with fitness equal to zero (no conflict)
-        return self.evaluate_fitness(grid) == 0
+        return self.evaluate_fitness(grid) == 243
+    
+    def get_solved_solution(self, population):
+        for solution in population:
+            if self.is_solved(solution):
+                return solution  # return the solution, not the population
+        return None  # return None if no valid solution exists within the population
 
     def selection(self, population):
         # Tournament selection: Randomly select two individuals, and return the one with the higher fitness

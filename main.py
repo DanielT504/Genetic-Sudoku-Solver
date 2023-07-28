@@ -76,7 +76,7 @@ class SudokuUI:
                             self.entries[i][j].insert(0, str(value))
                             self.root.update()
                             squares_filled = True
-                            time.sleep(0.01)  # delay of 10ms
+                            time.sleep(0.1)  # delay of 10ms
             if not squares_filled:
                 self.run_after_no_changes()
                 break
@@ -94,11 +94,11 @@ class SudokuUI:
         
     def solve_with_genetic_algorithm(self):
         print("Solving")
-        
+
         # Retrieve and forget the solve button right away.
         solve_genetic_button = self.root.grid_slaves(row=9)[0]
         solve_genetic_button.grid_forget()
-        
+
         genetic_solver = GeneticAlgorithm()
         population = genetic_solver.initialize_population(self.grid)
         for generation in range(genetic_solver.max_generations):
@@ -106,7 +106,16 @@ class SudokuUI:
             best_fitness = genetic_solver.evaluate_fitness(best_solution)
             print(f"Generation {generation+1}: Best Fitness: {best_fitness}/243")
             self.display_solution(best_solution)
+
             population = genetic_solver.evolve_population(population)
+            
+            # Check if a solution is found in the population
+            solved_solution = genetic_solver.get_solved_solution(population)
+            if solved_solution is not None:
+                print("Solution found!")
+                self.display_solution(solved_solution)
+                return  # Exit the function once a solution is found
+
             self.root.update_idletasks() # Update the UI to show the current solution
             
     def display_solution(self, solution):
@@ -143,6 +152,7 @@ class SudokuUI:
 
 # Create an instance of SudokuUI and run the program
 if __name__ == '__main__':
+    print("\n\nGenetic Sudoku Solver")
     grid_file = 'sudoku_grid_easy.txt'  # Replace with the actual file path
     sudoku_ui = SudokuUI(grid_file)
     sudoku_ui.run()
