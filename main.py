@@ -8,16 +8,9 @@ class SudokuUI:
     def __init__(self, grid_file):
         self.root = tk.Tk()
         self.root.title("Sudoku Solver")
-
-        # Load the grid from the file
         self.grid = self.load_grid(grid_file)
-        
-        self.iteration = 0  # Initialize the iteration count
-
-        # Create the UI elements
+        self.iteration = 0
         self.create_ui()
-
-        # Flag to track if the button was clicked
         self.button_clicked = False
 
     def load_grid(self, grid_file):
@@ -29,7 +22,6 @@ class SudokuUI:
         return grid
 
     def create_ui(self):
-        # Create a 9x9 grid of Entry widgets for displaying the Sudoku grid
         self.entries = []
         for i in range(9):
             row_entries = []
@@ -39,25 +31,21 @@ class SudokuUI:
                 row_entries.append(entry)
             self.entries.append(row_entries)
 
-        # Populate the grid with initial values
         for i in range(9):
             for j in range(9):
                 if self.grid[i][j] != 0:
                     self.entries[i][j].insert(0, str(self.grid[i][j]))
                     self.entries[i][j].config(state='readonly')
 
-        # Set the row and column weights to evenly distribute the cells within the grid
         for i in range(9):
             self.root.grid_rowconfigure(i, weight=1)
             self.root.grid_columnconfigure(i, weight=1)
 
-        # Add a button to fill in obvious squares
         solve_button = tk.Button(self.root, text="Fill in obvious squares", command=self.fill_obvious_squares_button_clicked)
         solve_button.grid(row=9, columnspan=9)
 
     def fill_obvious_squares_button_clicked(self):
         print("Filling in")
-        # Retrieve and forget the solve button right away.
         solve_button = self.root.grid_slaves(row=9)[0]
         solve_button.grid_forget()
         self.fill_obvious_squares()
@@ -76,7 +64,7 @@ class SudokuUI:
                             self.entries[i][j].insert(0, str(value))
                             self.root.update()
                             squares_filled = True
-                            time.sleep(0.1)  # delay of 10ms
+                            time.sleep(0.1)  # delay of 100ms
             if not squares_filled:
                 self.run_after_no_changes()
                 break
@@ -95,7 +83,6 @@ class SudokuUI:
     def solve_with_genetic_algorithm(self):
         print("Solving")
 
-        # Retrieve and forget the solve button right away.
         solve_genetic_button = self.root.grid_slaves(row=9)[0]
         solve_genetic_button.grid_forget()
 
@@ -109,14 +96,14 @@ class SudokuUI:
 
             population = genetic_solver.evolve_population(population)
             
-            # Check if a solution is found in the population
+            # check if a solution is found in the population
             solved_solution = genetic_solver.get_solved_solution(population)
             if solved_solution is not None:
                 print("Solution found!")
                 self.display_solution(solved_solution)
-                return  # Exit the function once a solution is found
+                return
 
-            self.root.update_idletasks() # Update the UI to show the current solution
+            self.root.update_idletasks() # update the UI
             
     def display_solution(self, solution):
         for i in range(9):
@@ -125,19 +112,19 @@ class SudokuUI:
                 self.entries[i][j].insert(0, str(solution[i][j]))
 
     def calculate_pencil_marks(self, row, col):
-        pencil_marks = set(range(1, 10))  # Initialize with all possible values
+        pencil_marks = set(range(1, 10))  # initialize with all possible values
 
-        # Remove conflicting values in the same row
+        # remove conflicting values in the same row
         for j in range(9):
             if self.grid[row][j] != 0:
                 pencil_marks.discard(self.grid[row][j])
 
-        # Remove conflicting values in the same column
+        # remove conflicting values in the same column
         for i in range(9):
             if self.grid[i][col] != 0:
                 pencil_marks.discard(self.grid[i][col])
 
-        # Remove conflicting values in the same 3x3 box
+        # remove conflicting values in the same 3x3 box
         box_row = (row // 3) * 3
         box_col = (col // 3) * 3
         for i in range(box_row, box_row + 3):
@@ -149,10 +136,8 @@ class SudokuUI:
     def run(self):
         self.root.mainloop()
 
-
-# Create an instance of SudokuUI and run the program
 if __name__ == '__main__':
     print("\n\nGenetic Sudoku Solver")
-    grid_file = 'sudoku_grid_easy.txt'  # Replace with the actual file path
+    grid_file = 'sudoku_grid_easy.txt'
     sudoku_ui = SudokuUI(grid_file)
     sudoku_ui.run()

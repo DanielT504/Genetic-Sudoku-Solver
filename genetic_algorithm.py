@@ -2,7 +2,10 @@ import random
 import heapq
 
 class GeneticAlgorithm:
-    def __init__(self, population_size=1000, max_generations=100000, mutation_rate=0.04, tournament_size=10, random_selection_portion=0.1, elitism_portion=0.1):
+    def __init__(self, population_size=1000,
+                 max_generations=100000, mutation_rate=0.04,
+                 tournament_size=10, random_selection_portion=0.1,
+                 elitism_portion=0.1):
         self.population_size = population_size
         self.max_generations = max_generations
         self.mutation_rate = mutation_rate
@@ -39,21 +42,18 @@ class GeneticAlgorithm:
         
         for i in range(9):
             if random.random() < self.mutation_rate:
-                # Determine if we're swapping in a row, column, or box
                 mutation_type = random.choice(['row', 'column', 'box'])
                 
                 if mutation_type == 'row':
-                    # Swap two cells in this row
+                    # swap two cells in a row
                     j1, j2 = random.sample(range(9), 2)
                     mutated_solution[i][j1], mutated_solution[i][j2] = mutated_solution[i][j2], mutated_solution[i][j1]
-                    
                 elif mutation_type == 'column':
-                    # Swap two cells in this column
+                    # swap two cells in a column
                     i1, i2 = random.sample(range(9), 2)
                     mutated_solution[i1][i], mutated_solution[i2][i] = mutated_solution[i2][i], mutated_solution[i1][i]
-                    
-                else:  # mutation_type == 'box'
-                    # Swap two cells in this box
+                else:
+                    # swap two cells in a box
                     start_row, start_col = (i // 3) * 3, (i % 3) * 3
                     box_cells = [(start_row + r, start_col + c) for r in range(3) for c in range(3)]
                     (i1, j1), (i2, j2) = random.sample(box_cells, 2)
@@ -64,7 +64,7 @@ class GeneticAlgorithm:
     def evolve_population(self, population):
         new_population = []
 
-        # Select the fittest individuals to be passed onto the new population
+        # Select the fittest individuals to be passed onto the new population (elitism)
         num_elitism = int(len(population) * self.elitism_portion)
         population_sorted_by_fitness = heapq.nlargest(num_elitism, population, key=self.evaluate_fitness)
         new_population.extend(population_sorted_by_fitness)
@@ -83,7 +83,7 @@ class GeneticAlgorithm:
 
         for i in range(len(new_population)):
             new_population[i] = self.mutate(new_population[i])
-            
+
         best_solution = self.get_best_solution(new_population)
         best_fitness = self.evaluate_fitness(best_solution)
         if best_fitness > self.best_fitness_so_far:
@@ -92,37 +92,23 @@ class GeneticAlgorithm:
         else:
             self.generations_without_improvement += 1
 
-        if self.generations_without_improvement >= 50:  # 50 generations without improvement
-            print("Starting local search...")  # Debugging line
-            for i in range(9):
-                for j in range(9):
-                    current_fitness = self.evaluate_fitness(best_solution)
-                    original_value = best_solution[i][j]
-                    for num in range(1, 10):  # Try each possible value
-                        best_solution[i][j] = num
-                        if self.evaluate_fitness(best_solution) > current_fitness:  # If the fitness improved, keep the new value
-                            print(f"Improved solution: {self.evaluate_fitness(best_solution)}")  # Debugging line
-                            break  # Go to next cell
-                        else:  # If the fitness didn't improve, revert the value
-                            best_solution[i][j] = original_value
+        if self.is_solved(best_solution):
+            return [best_solution] # return optimal if grid is solved
 
-        if self.is_solved(best_solution):  # Check if the Sudoku is solved
-            return [best_solution]  # return a population containing the single best solution
-
-        return new_population  # return the population as is
+        return new_population # otherwise return the grid as is
 
     def is_solved(self, grid):
-        # A solved Sudoku grid is a grid with fitness equal to zero (no conflict)
+        # 9*27 = 243 (no conflicting values means perfect fitness)
         return self.evaluate_fitness(grid) == 243
     
     def get_solved_solution(self, population):
         for solution in population:
             if self.is_solved(solution):
-                return solution  # return the solution, not the population
-        return None  # return None if no valid solution exists within the population
+                return solution
+        return None
 
     def selection(self, population):
-        # Tournament selection: Randomly select two individuals, and return the one with the higher fitness
+        # tournament selection: two random individuals, and return the fittest
         individual1 = random.choice(population)
         individual2 = random.choice(population)
         fitness1 = self.evaluate_fitness(individual1)
@@ -130,7 +116,7 @@ class GeneticAlgorithm:
         return individual1 if fitness1 > fitness2 else individual2
 
     def crossover(self, parent1, parent2):
-        # Single-point crossover: Randomly select a crossover point and create a child by combining parent chromosomes
+        # random single-point crossover
         crossover_point = random.randint(0, 8)
         child = []
         for i in range(9):
@@ -141,7 +127,7 @@ class GeneticAlgorithm:
         return child
 
     def evaluate_fitness(self, solution):
-        # Fitness evaluation: Count the number of unique values in each row, column, and 3x3 box
+        # fitness counts the number of unique values in each row, column, and 3x3 box
         fitness = 0
         for i in range(9):
             row_values = set(solution[i])
@@ -167,15 +153,15 @@ class GeneticAlgorithm:
     def get_valid_numbers(self, grid, row, col):
         valid_numbers = set(range(1, 10))
         
-        # Remove conflicting values in the same row
+        # remove conflicting row values
         for j in range(9):
             valid_numbers.discard(grid[row][j])
 
-        # Remove conflicting values in the same column
+        # remove conflicting column values
         for i in range(9):
             valid_numbers.discard(grid[i][col])
 
-        # Remove conflicting values in the same 3x3 box
+        # remove conflicting box values
         box_row = (row // 3) * 3
         box_col = (col // 3) * 3
         for i in range(box_row, box_row + 3):
@@ -185,8 +171,5 @@ class GeneticAlgorithm:
         return list(valid_numbers)
     
     def tournament_selection(self, population):
-        # Choose a random number of individuals from the population
         tournament = random.sample(population, self.tournament_size)
-        
-        # Return the best individual among the chosen
         return self.get_best_solution(tournament)
