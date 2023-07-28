@@ -138,6 +138,6 @@ class SudokuUI:
 
 if __name__ == '__main__':
     print("\n\nGenetic Sudoku Solver")
-    grid_file = 'sudoku_grid_easy.txt'
+    grid_file = 'sudoku_grid.txt'
     sudoku_ui = SudokuUI(grid_file)
     sudoku_ui.run()
