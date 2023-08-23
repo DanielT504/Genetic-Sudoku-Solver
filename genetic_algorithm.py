@@ -3,17 +3,24 @@ import heapq
 
 class GeneticAlgorithm:
     def __init__(self, population_size=1000,
-                 max_generations=100000, mutation_rate=0.04,
+                 max_generations=100000, mutation_rate=0.04, 
+                 mutation_rate_factor=1.5, stagnation_threshold=50, 
                  tournament_size=10, random_selection_portion=0.1,
                  elitism_portion=0.1):
         self.population_size = population_size
         self.max_generations = max_generations
         self.mutation_rate = mutation_rate
+        self.mutation_rate_factor = mutation_rate_factor
+        self.stagnation_threshold = stagnation_threshold
         self.tournament_size = tournament_size
         self.random_selection_portion = random_selection_portion
         self.elitism_portion = elitism_portion
         self.generations_without_improvement = 0
         self.best_fitness_so_far = float('-inf')
+        self.best_fitness = None
+        self.stagnant_generations = 0
+        self.max_mutation_rate = 0.05
+        self.min_mutation_rate = 0.01
 
     def initialize_population(self, grid):
         population = []
@@ -86,11 +93,19 @@ class GeneticAlgorithm:
 
         best_solution = self.get_best_solution(new_population)
         best_fitness = self.evaluate_fitness(best_solution)
-        if best_fitness > self.best_fitness_so_far:
-            self.best_fitness_so_far = best_fitness
-            self.generations_without_improvement = 0
+        if self.best_fitness is None or best_fitness > self.best_fitness:
+            self.best_fitness = best_fitness
+            self.stagnant_generations = 0  # Reset stagnant generations count when a new best solution is found
+            self.mutation_rate *= (1/self.mutation_rate_factor)  # Decrease mutation rate when a new best solution is found
+            self.mutation_rate = max(self.mutation_rate, self.min_mutation_rate)  # Don't allow mutation rate to fall below the minimum
         else:
-            self.generations_without_improvement += 1
+            self.stagnant_generations += 1  # Increment stagnant generations count when no new best solution is found
+
+        # Check if the number of stagnant generations is greater than the stagnation threshold
+        if self.stagnant_generations > self.stagnation_threshold:
+            self.mutation_rate *= self.mutation_rate_factor  # Increase mutation rate
+            self.mutation_rate = min(self.mutation_rate, self.max_mutation_rate)  # Don't allow mutation rate to exceed the maximum
+            self.stagnant_generations = 0  # Reset stagnant generations count
 
         if self.is_solved(best_solution):
             return [best_solution] # return optimal if grid is solved
